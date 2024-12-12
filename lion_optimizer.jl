@@ -3,7 +3,7 @@ using Random
 
 #### ----- ###
 #### Before getting started you should write your student_number in integer format
-const student_number::Int64 = 0  ## <---replace 0 by your student_number 
+const student_number::Int64 = 123456789  ## <---replace 0 by your student_number 
 ### ---- ###
 ## In this tiny HW you will implement Lion optimizer (see the paper:https://arxiv.org/pdf/2302.06675 -- page 24)
 ## See the other files for reference... 
@@ -24,6 +24,18 @@ Lion(η = 0.001, ρ_1 = 0.9,ρ_2 = 0.99 , w = 0.001) = Lion(η, ρ_1, ρ_2, w, I
 ## You need to implement apply! function, for this you will need to review the related week.
 function apply!(o::Lion, x,  Δ)
     ## Here you should have updated ∇. 
+    η = o.eta
+    ρ1, ρ2 = o.rho_1, o.rho_2
+    
+    velocity = get!(o.velocity, x) do
+        zero(x)
+    end
+    
+    @. velocity = ρ1 * velocity + (1 - ρ1) * Δ
+    @. Δ = ρ2 * velocity + (1 - ρ2) * Δ
+    @. Δ = η * sign(Δ)
+    
+    o.velocity[x] = velocity
     return Δ
 end
 
@@ -40,7 +52,7 @@ function optimize(f::Function, x::AbstractArray, opt::AbstractOptimiser; max_ite
         grad = Zygote.gradient(t->f(t), x)[1]
         x = step!(opt, x, grad)
         if i % 100 == 0
-            @info "Iter $(i): f(x) = $(f(x)), grad = $(norm(grad))"
+            @info "Iter $(i): f(x) = $(f(x)), grad = $(norm(grad)), x = $(x)" # Added additional x for debugging
         end
         if norm(grad) < stopping_criterion
             @info "ok in $(i) steps"
@@ -56,9 +68,17 @@ opt = Lion(0.0001)
 function RosenBrock(x)
     return (1.0 - x[1])^2 + 100.0 * (x[2] - x[1]^2)^2
 end
+
 x = [-0.2, -0.1]
 optimize(RosenBrock, x, opt, max_iter = 1000, stopping_criterion = 1e-4)
 
+opt = Lion(0.0001)
+x = [0.0, 0.0]
+optimize(RosenBrock, x, opt, max_iter = 1000, stopping_criterion = 1e-4)
+
+opt = Lion(0.0001)
+x = [0.2, 0.2]
+optimize(RosenBrock, x, opt, max_iter = 1000, stopping_criterion = 1e-4)
 """
 You should see the following output:
 opt = Lion(0.0001)
