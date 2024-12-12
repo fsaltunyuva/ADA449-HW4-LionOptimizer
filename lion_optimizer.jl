@@ -70,16 +70,18 @@ opt = Lion(0.0001)
 function RosenBrock(x)
     return (1.0 - x[1])^2 + 100.0 * (x[2] - x[1]^2)^2
 end
-
 x = [-0.2, -0.1]
+# should be x =  [-0.09998499583280371, 5.004666679498792e-6]
 optimize(RosenBrock, x, opt, max_iter = 1000, stopping_criterion = 1e-4)
 
 opt = Lion(0.0001)
 x = [0.0, 0.0]
-optimize(RosenBrock, x, opt, max_iter = 1000, stopping_criterion = 1e-4)
+# should be x = [ 0.0999950051661627, 0.009899667258300326]
+optimize(RosenBrock, x, opt, max_iter = 1000, stopping_criterion = 1e-4) 
 
 opt = Lion(0.0001)
 x = [0.2, 0.2]
+# should be x = [0.9743605 , 0.94933301]
 optimize(RosenBrock, x, opt, max_iter = 1000, stopping_criterion = 1e-4)
 """
 You should see the following output:
