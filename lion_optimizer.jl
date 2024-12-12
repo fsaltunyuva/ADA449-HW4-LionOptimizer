@@ -26,25 +26,19 @@ function apply!(o::Lion, x,  Δ)
     ## Here you should have updated ∇. 
     η = o.eta
     ρ1, ρ2 = o.rho_1, o.rho_2
-    λ = o.w
     
-    # Initialize local momentum (m_t) and velocity (v_t) variables
-    m, v = get!(o.velocity, x) do
-        (zero(x), zero(x))  # Initialize m and v if they don't exist
+    velocity = get!(o.velocity, x) do
+        zero(x)
     end
-    
-    # Update momentum (m_t)
-    @. m = ρ1 * m + (1 - ρ1) * Δ
-    
-    # Update velocity (v_t) (EMA of the momentum)
-    @. v = ρ2 * v + (1 - ρ2) * Δ
-    
-    # Update the parameters using weight decay and the gradient update
-    @. Δ = η * sign(v) + λ * x  ## Update rule for parameters
 
-    o.velocity[x] = (m, v)
-    
-    return Δ
+    @. velocity = ρ2 * velocity + (1 - ρ2) * Δ
+
+    Δ_update = @. η * sign((ρ2 - ρ1) * Δ + ρ1 * velocity)
+
+    o.velocity[x] = velocity
+
+    return Δ_update
+    # return Δ
 end
 
 ## Step function is given, because it is the same...
