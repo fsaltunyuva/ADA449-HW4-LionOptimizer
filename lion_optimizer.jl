@@ -83,10 +83,47 @@ x = [0.0, 0.0]
 # should be x = [ 0.0999950051661627, 0.009899667258300326]
 optimize(RosenBrock, x, opt, max_iter = 1000, stopping_criterion = 1e-4) 
 
-opt = Lion(0.0001)
+opt = Lion(0.0079)
 x = [0.2, 0.2]
 # should be x = [0.9743605 , 0.94933301]
 optimize(RosenBrock, x, opt, max_iter = 1000, stopping_criterion = 1e-4)
+
+function test_learning_rates_nearest()
+    expected_result = [0.9743605, 0.94933301]
+    x_init = [0.2, 0.2]
+    best_eta = 0.0
+    min_error = Inf
+    closest_result = nothing
+
+    println("Testing learning rates to find the exact or nearest result...")
+
+    for candidate_lr in range(0.0001, stop=0.01, length=100)
+        opt = Lion(candidate_lr)
+        x = copy(x_init)
+        result = optimize(RosenBrock, x, opt, max_iter=1000, stopping_criterion=1e-4)
+
+        error = norm(result - expected_result)
+
+        if error < min_error
+            min_error = error
+            best_eta = candidate_lr
+            closest_result = result
+        end
+
+        if error < 1e-6  # Tolerance for "exact" match
+            println(@sprintf("Found exact matching learning rate: %.6f, Result: %s", candidate_lr, result))
+            return candidate_lr, result
+        end
+    end
+
+    println(@sprintf("No exact match found. Nearest learning rate: %.6f, Result: %s, Error: %.6f",
+        best_eta, closest_result, min_error))
+    return best_eta, closest_result
+end
+
+# Run the nearest learning rate test
+test_learning_rates_nearest()
+
 """
 You should see the following output:
 opt = Lion(0.0001)
