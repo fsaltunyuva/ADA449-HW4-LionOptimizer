@@ -28,14 +28,15 @@ function apply!(o::Lion, x,  Δ)
     ρ1 = o.rho_1
     ρ2 = o.rho_2
     λ = o.w
-    
+
     velocity = get!(o.velocity, x) do
         zero(x)
     end
 
+    c_t = ρ1 * velocity + (1 - ρ1) * Δ
     velocity .= ρ2 * velocity + (1 - ρ2) * Δ
 
-    c_t = ρ1 * velocity + (1 - ρ1) * Δ
+    # c_t = ρ1 * velocity + (1 - ρ1) * Δ
     Δ_update = η * (sign.(c_t) + λ * x)  # Weight decay term added
 
     o.velocity[x] = velocity
