@@ -25,15 +25,18 @@ Lion(η = 0.001, ρ_1 = 0.9,ρ_2 = 0.99 , w = 0.001) = Lion(η, ρ_1, ρ_2, w, I
 function apply!(o::Lion, x,  Δ)
     ## Here you should have updated ∇. 
     η = o.eta
-    ρ1, ρ2 = o.rho_1, o.rho_2
+    ρ1 = o.rho_1
+    ρ2 = o.rho_2
+    λ = o.w
     
     velocity = get!(o.velocity, x) do
         zero(x)
     end
 
-    @. velocity = ρ2 * velocity + (1 - ρ2) * Δ
+    velocity .= ρ2 * velocity + (1 - ρ2) * Δ
 
-    Δ_update = @. η * sign((ρ2 - ρ1) * Δ + ρ1 * velocity)
+    c_t = ρ1 * velocity + (1 - ρ1) * Δ
+    Δ_update = η * (sign.(c_t) + λ * x)  # Weight decay term added
 
     o.velocity[x] = velocity
 
