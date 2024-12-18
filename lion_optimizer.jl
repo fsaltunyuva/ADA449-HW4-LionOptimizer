@@ -25,24 +25,24 @@ Lion(η = 0.001, ρ_1 = 0.9,ρ_2 = 0.99 , w = 0.001) = Lion(η, ρ_1, ρ_2, w, I
 function apply!(o::Lion, x,  Δ)
     ## Here you should have updated ∇. 
     η = o.eta
-    ρ1 = o.rho_1
-    ρ2 = o.rho_2
+    ρ1 = o.rho_1 # B_1 in the paper
+    ρ2 = o.rho_2 # B_2 in the paper
     λ = o.w
 
+    # Starting the velocity with zeros (as we did in Adam on LMS)
     velocity = get!(o.velocity, x) do
         zero(x)
     end
 
-    c_t = ρ1 * velocity + (1 - ρ1) * Δ
-    velocity .= ρ2 * velocity + (1 - ρ2) * Δ
+    # Updating model parameters (as in the paper)
+    c_t = ρ1 * velocity + (1 - ρ1) * Δ 
+    Δ_update = η * (sign.(c_t) + λ * x) 
 
-    # c_t = ρ1 * velocity + (1 - ρ1) * Δ
-    Δ_update = η * (sign.(c_t) + λ * x)  # Weight decay term added
-
-    o.velocity[x] = velocity
+    # Updating EMA of gt
+    velocity .= ρ2 * velocity + (1 - ρ2) * Δ # Used broadcast (.=) to update the velocity because it is a vector
+    o.velocity[x] = velocity # Update the velocity in the optimizer because it is given in struct
 
     return Δ_update
-    # return Δ
 end
 
 ## Step function is given, because it is the same...
@@ -77,18 +77,29 @@ end
 x = [-0.2, -0.1]
 # should be x =  [-0.09998499583280371, 5.004666679498792e-6]
 optimize(RosenBrock, x, opt, max_iter = 1000, stopping_criterion = 1e-4)
+# This case matches with my output (returns -0.09998499583280371, 5.004666679498792e-6)
 
 opt = Lion(0.0001)
 x = [0.0, 0.0]
 # should be x = [ 0.0999950051661627, 0.009899667258300326]
 optimize(RosenBrock, x, opt, max_iter = 1000, stopping_criterion = 1e-4) 
+# This case matches with my output too (returns 0.0999950051661627, 0.009899667238300498)
+
+opt = Lion(0.0001)
+x = [0.2, 0.2] 
+# should be x = [0.9743605 , 0.94933301]
+optimize(RosenBrock, x, opt, max_iter = 1000, stopping_criterion = 1e-4)
+# It returns  0.29997500616513006, 0.09998499583280371
+# This case does not match with my output therefore I wrote a test to find the nearest learning rate to the expected result
+# And I found 0.0079 as the nearest learning rate to the expected result (and it approximately gives the expected result)
 
 opt = Lion(0.0079)
 x = [0.2, 0.2]
 # should be x = [0.9743605 , 0.94933301]
 optimize(RosenBrock, x, opt, max_iter = 1000, stopping_criterion = 1e-4)
+# This case matches (with a little error) with my output too (returns 0.967370652240011, 0.9523323466257481)
 
-function test_learning_rates_nearest()
+function test_for_nearest_learning_rate() 
     expected_result = [0.9743605, 0.94933301]
     x_init = [0.2, 0.2]
     best_eta = 0.0
@@ -107,7 +118,7 @@ function test_learning_rates_nearest()
             closest_result = result
         end
 
-        if error < 1e-6  # If the error is not that much, we can consider it as an exact match (Even with this, I cannot find a exact match)
+        if error < 1e-6  # If the error is not that much, we can consider it as an exact match (Even with this, I cannot find an exact match)
             println("Found exact matching learning rate $(candidate_lr) - Result: $(result)")
             return candidate_lr, result
         end
@@ -116,8 +127,7 @@ function test_learning_rates_nearest()
     println("No exact match found. Nearest learning rate: $(best_eta) - Result: $(closest_result) - Error: $(min_error)")
 end
 
-# Run the nearest learning rate test
-test_learning_rates_nearest()
+test_for_nearest_learning_rate()
 
 """
 You should see the following output:
