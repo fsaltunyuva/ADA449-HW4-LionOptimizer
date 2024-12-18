@@ -100,10 +100,10 @@ optimize(RosenBrock, x, opt, max_iter = 1000, stopping_criterion = 1e-4)
 # This case matches (with a little error) with my output too (returns 0.967370652240011, 0.9523323466257481)
 
 function test_for_nearest_learning_rate() 
-    expected_result = [0.9743605, 0.94933301]
-    x_init = [0.2, 0.2]
-    best_eta = 0.0
-    min_error = Inf
+    expected_result = [0.9743605, 0.94933301] # Expected result for the given x value (it is specific for my case but it can be changed)
+    x_init = [0.2, 0.2] # Initial x value (it is specific for my case but it can be changed)
+    best_eta = 0.0 
+    min_error = Inf # Initializing as infinity to change it in the first iteration
     closest_result = Float64[]
 
     for candidate_lr in range(0.0001, stop=0.01, length=100)
